@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String            @id @default(uuid())
+  username            String            @unique @default("")
+  email               String            @unique
+  password_hash       String
+  created_at          DateTime          @default(now())
+  
+  ownedSecrets        Secret[]          @relation("SecretOwner")
+  createdVersions     SecretVersion[]   @relation("VersionCreator")
+  grantedPermissions  SecretPermission[] @relation("PermissionGranter")
+  permissions         SecretPermission[] @relation("PermissionHolder")
+  refreshTokens       RefreshToken[]
+}
+
+model RefreshToken {
+  id                  String            @id @default(uuid())
+  token               String            @unique
+  expires_at          DateTime
+  created_at          DateTime          @default(now())
+  revoked             Boolean           @default(false)
+  
+  user                User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id             String
+  
+  @@index([user_id])
+}
+
+model Secret {
+  id                  String            @id @default(uuid())
+  name                String
+  encrypted_dek       String
+  created_at          DateTime          @default(now())
+  
+  owner               User              @relation("SecretOwner", fields: [owner_user_id], references: [id])
+  owner_user_id       String
+  
+  versions            SecretVersion[]
+  permissions         SecretPermission[]
+}
+
+model SecretVersion {
+  id                  String            @id @default(uuid())
+  encrypted_content   String
+  version_number      Int
+  created_at          DateTime          @default(now())
+  
+  secret              Secret            @relation(fields: [secret_id], references: [id])
+  secret_id           String
+  
+  created_by          User              @relation("VersionCreator", fields: [created_by_user_id], references: [id])
+  created_by_user_id  String
+}
+
+model SecretPermission {
+  id                  String            @id @default(uuid())
+  permission_level    PermissionLevel
+  created_at          DateTime          @default(now())
+  
+  secret              Secret            @relation(fields: [secret_id], references: [id])
+  secret_id           String
+  
+  user                User              @relation("PermissionHolder", fields: [user_id], references: [id])
+  user_id             String
+  
+  granted_by          User              @relation("PermissionGranter", fields: [granted_by_user_id], references: [id])
+  granted_by_user_id  String
+  
+  @@unique([secret_id, user_id])
+}
+
+enum PermissionLevel {
+  READ
+  WRITE
+  READ_WRITE
+}

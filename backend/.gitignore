@@ -1,0 +1,26 @@
+# Keep environment variables out of version control
+.env
+.env.*
+
+# Prisma
+prisma/migrations/*
+
+# Ignore all files in the logs directory
+logs/*
+
+# Ignore all files in the uploads directory
+uploads/*
+
+generated/*
+
+# Ignore all files in the dist directory
+dist/*
+
+# Ignore all files in the build directory
+build/*
+
+# Ignore all files in the coverage directory
+coverage/*
+
+# Ignore all files in the node_modules directory
+node_modules/*
